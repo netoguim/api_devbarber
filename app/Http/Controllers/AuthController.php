@@ -11,7 +11,7 @@ class AuthController extends Controller
 {
 
     public function __construct() {
-        $this->middleware('auth:api', ['except' => ['create', 'login']]);
+        $this->middleware('auth:api', ['except' => ['create', 'login', 'unauthorized']]);
     }
 
 
@@ -89,4 +89,31 @@ class AuthController extends Controller
 
         return $array;
     }
+
+       public function logout() {
+           auth()->logout();
+           return['error'=>''];
+       }
+
+       public function refresh() {
+        $array = ['error'=>''];
+
+        $token = auth()->refresh();
+
+        $info = auth()->user();
+        $info['avatar'] = url('media/avatars/'.$info['avatars']);
+        $array['data'] = $info;
+        $array['token'] = $token;
+
+
+
+        return $array;
+       }
+
+
+       public function unauthorized() {
+           return response()->json([
+               'error' => 'Não autorizado'
+           ], 401);
+       }
 }
