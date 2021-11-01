@@ -9,20 +9,17 @@ use App\Models\User;
 
 class AuthController extends Controller
 {
-
     public function __construct() {
         $this->middleware('auth:api', ['except' => ['create', 'login', 'unauthorized']]);
     }
 
-
     public function create(Request $request) {
-        $array = ['error'=>''];
+        $array = ['error' => ''];
 
         $validator = Validator::make($request->all(), [
             'name' => 'required',
             'email' => 'required|email',
-            'password' => 'required'
-
+            'password' => 'required',
         ]);
 
         if(!$validator->fails()) {
@@ -31,6 +28,7 @@ class AuthController extends Controller
             $password = $request->input('password');
 
             $emailExists = User::where('email', $email)->count();
+
             if($emailExists === 0) {
                 $hash = password_hash($password, PASSWORD_DEFAULT);
 
@@ -49,17 +47,18 @@ class AuthController extends Controller
                     $array['error'] = 'Ocorreu um erro!';
                     return $array;
                 }
+
                 $info = auth()->user();
                 $info['avatar'] = url('media/avatars/'.$info['avatar']);
                 $array['data'] = $info;
                 $array['token'] = $token;
 
             } else {
-                $array['error'] = 'Email já cadastrado!';
-                return $array;
+                $array['error'] = 'E-mail já cadastrado!';
             }
+
         } else {
-            $array['error'] = 'Dados incorretos';
+            $array['error'] = 'Dados incorretos!';
             return $array;
         }
 
@@ -90,30 +89,27 @@ class AuthController extends Controller
         return $array;
     }
 
-       public function logout() {
-           auth()->logout();
-           return['error'=>''];
-       }
+    public function logout() {
+        auth()->logout();
+        return ['error' => ''];
+    }
 
-       public function refresh() {
-        $array = ['error'=>''];
+    public function refresh() {
+        $array = ['error' => ''];
 
         $token = auth()->refresh();
 
         $info = auth()->user();
-        $info['avatar'] = url('media/avatars/'.$info['avatars']);
+        $info['avatar'] = url('media/avatars/'.$info['avatar']);
         $array['data'] = $info;
         $array['token'] = $token;
 
-
-
         return $array;
-       }
+    }
 
-
-       public function unauthorized() {
-           return response()->json([
-               'error' => 'Não autorizado'
-           ], 401);
-       }
+    public function unauthorized() {
+        return response()->json([
+            'error' => 'Não autorizado'
+        ], 401);
+    }
 }
