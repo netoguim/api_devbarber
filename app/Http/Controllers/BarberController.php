@@ -150,5 +150,111 @@ public function list(Request $request) {
 
     return $array;
 }
+
+
+    public function one($id) {
+        $array = ['error' =>''];
+
+        $barber = Barber::find($id);
+
+        if($barber) {
+            $barber['avatar'] = url('media/avatars'.$barber['avatar']);
+            $barber['favorited'] = false;
+            $barber['photos'] = [];
+            $barber['services'] = [];
+            $barber['testimonials'] = [];
+            $barber['available'] = [];
+
+            // verificando favorito 
+            $favorite = UserFavorite::where('id_user', $this->loggedUser->id)
+            ->where('id_barber', $barber->id)
+            ->count();
+
+                if($cFavorite > 0) {
+                    $barber['favorited'] = true;
+                }
+
+            // pegando as fotos dos barbeiros;
+            $barber['photos'] = BarberPhotos::select(['id', 'url'])->where('id_barber', $barber->id)->get();
+            foreach($barber['photos'] as $bpkey => $bpvalue) {
+                $barber['photos'][$bpkey]['url'] = url('media/uploads/'.$barber['photos'][$bpkey]['url']);
+            }
+
+
+            // pegando os serviços do barbeiro
+            $barber['services'] = BarberServices::select(['id', 'name', 'price'])->where('id_barber', $barber->id)->get();
+
+
+
+            // pegando os depoimentos do barbeiro
+
+            $barber['testimonials'] = BarberTestimonial::select(['id', 'name', 'rate', 'body'])->where('id_barber', $barber->id)->get();
+
+
+
+            // pegando disponibilidade do barbeiro 
+            
+            $availability = [];
+
+            //- pegando a disponibilidade crua
+            $avails = BarberAvailability::where('id_barber', $barber->id)->get();
+            $availWeekdays = [];
+            foreach($avails as $item) {
+                $availWeekdays[$item['weekday']] = explode(',', $item['hours']);
+            }
+
+            // pegar os agendamentos dos proximos 20 dias 
+            $appointments = [];
+            $appQuery = UserAppointment::where('id_barber', $barber->id)
+                ->whereBetween('ap_datetime', [
+                    date('Y-m-d').' 00:00:00',
+                    date('Y-m-d', strtotime('+20 days')).' 23:59:59'
+                ])
+                ->get();
+
+                foreach($appQuery as $appItem) {
+                    $appointments[] = $appItem['ap_datetime'];
+                }
+    
+
+
+                 // - gerar disponibilidade real
+                 for($q=0;$q<20;$q++) {
+                    $timeItem = strtotime('+'.$q.' days');
+                    $weekday = date('w', $timeItem);
+                    
+                    if(in_array($weekday, array_keys($availWeekdays))) {
+                        $hours = [];
+
+                        $dayItem = date('Y-m-d', $timeItem);
+
+                        foreach($availWeekdays[$weekday] as $hourItem) {
+                            $dayFormated = $dayItem.' '.$hourItem.':00';
+                            if(!in_array($dayFormated, $appointments)) {
+                                $hours[] = $hourItem;
+                            }
+                        }
+
+                        if(count($hours) > 0) {
+                            $availability[] = [
+                                'date' => $dayItem,
+                                'hours' => $hours
+                            ];
+                        }
+    
+                    }
+                }
+
+            $barber['available'] = $availability;
+
+            $array['data'] = $barber;
+        } else {
+            $array['error'] = 'Barbeiro não existe!';
+            return $array;
+        }
+
+        return $array;
+        
+    }
 }
 
