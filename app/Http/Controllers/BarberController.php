@@ -166,7 +166,7 @@ public function list(Request $request) {
             $barber['available'] = [];
 
             // verificando favorito 
-            $favorite = UserFavorite::where('id_user', $this->loggedUser->id)
+            $cFavorite = UserFavorite::where('id_user', $this->loggedUser->id)
             ->where('id_barber', $barber->id)
             ->count();
 
