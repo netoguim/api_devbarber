@@ -351,6 +351,10 @@ public function list(Request $request) {
                 ->where('name', 'LIKE', '%'.$q.'%')
                 ->get();
 
+                foreach($barbers as $bkey => $barber) {
+                    $barbers[$bkey]['avatar'] = url('media/avatars/'.$barbers[$bkey]['avatar']);
+                }
+
                 $array['list'] = $barbers;
             } else {
                 $array['error'] = 'Digite algo para buscar';
